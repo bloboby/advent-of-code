@@ -4,23 +4,19 @@ import Data.Map (Map)
 import Data.Set (Set)
 
 import Data.Char (ord)
-import Data.Tuple (swap)
-import Util
+import Data.List (transpose)
 
 type State = (Map Int Char, Map Char String)
+type Path = [(Int, State)]
 
--- this code gives a wrong answer for the test input (too low, so
--- possibly generated an invalid move) but i cbb debugging any more
+-- input is hardcoded
 
 makeState :: [String] -> State
 makeState rooms = (M.fromList . zip [0..10] $ repeat '.',
                    M.fromList . zip "ABCD" $ rooms)
 
-input :: String -> State
--- input s = makeState ["BDDA", "CCBD", "BBAC", "DACA"]
-input s = makeState ["ADDD", "CCBD", "BBAB", "AACC"]
-
 kRoomSize = 4
+input s = makeState ["ADDD", "CCBD", "BBAB", "AACC"]
 
 -- compute graph
 
@@ -45,12 +41,7 @@ moveHall (hall, rooms) (i, c)
           hall' = M.insert i '.' hall
           rooms' = M.insert c (c:room) rooms
       in [(dist, (hall', rooms'))]
-  | otherwise =
-      let slide j =
-            let dist = 10^(n-1) * abs (j-i)
-                hall' = M.insert j c . M.insert i '.' $ hall
-            in (dist, (hall', rooms))
-      in map slide [x | x <- [left..right], odd x || x==0 || x==10]
+  | otherwise = []
   where room = rooms M.! c
         n = ord c - ord 'A' + 1
         [left, right] = getBounds hall i
@@ -75,28 +66,43 @@ moveRoom (hall, rooms) k
 
 -- dijkstra with Set as PQ
 
-getDist :: Map State Int -> Int -> (Int, State) -> (Int, State)
-getDist dist d (weight, node) =
-  case M.lookup node dist of
-    Nothing -> (new, node)
-    Just old -> (min old new, node)
-  where new = d + weight
-
-dijkstra :: Map State Int -> Set State -> Set (Int, State) -> Int
-dijkstra dist visited pq
-  | current == (makeState $ map (take kRoomSize . repeat) "ABCD") = d
-  | current `S.member` visited = dijkstra dist visited pq'
+dijkstra :: Map State Path -> Set State -> Set (Int, State) -> Path
+dijkstra cache visited pq
+  | current == (makeState $ map (take kRoomSize . repeat) "ABCD") =
+      cache M.! current
+  | current `S.member` visited = dijkstra cache visited pq'
   | otherwise =
-      let nbrs = let notVis n = (snd n) `S.notMember` visited'
-                 in filter notVis $ getNbrs current
-          nbrDists = map (getDist dist d) nbrs
-          dist' = foldr (uncurry M.insert) dist $ map swap nbrDists
+      let weightNbrs = let notVis n = (snd n) `S.notMember` visited'
+                       in filter notVis $ getNbrs current
+          nbrs = map snd weightNbrs
+          paths = map getPath weightNbrs
+          cache' = foldr (uncurry M.insert) cache $ zip nbrs paths
           visited' = S.insert current visited
-          pq'' = foldr S.insert pq' nbrDists
-      in dijkstra dist' visited' pq''
+          pq'' = foldr S.insert pq' $ zip (map (fst.head) paths) nbrs
+      in dijkstra cache' visited' pq''
   where
     ((d, current), pq') = S.deleteFindMin pq
+    path = cache M.! current
+    getPath (w,n) =
+      case M.lookup n cache of
+        Nothing -> (w+d,n):path
+        Just path' -> let d' = fst $ head path'
+                      in if w+d < d' then (w+d,n):path else path'
 
-solve x = dijkstra M.empty S.empty $ S.singleton (0, x)
+solve x = dijkstra (M.singleton x []) S.empty (S.singleton (0,x))
 
-main = interact $ Util.print . solve . input
+-- display
+
+displayStep :: (Int, State) -> [String]
+displayStep (dist, (hall, rooms)) =
+  [show dist, "#############", "#" ++ (M.elems hall) ++ "#",
+   f $ head rows] ++ (map g $ tail rows) ++ ["  #########", ""]
+  where rows = transpose . map pad $ M.elems rooms
+        pad room = let rest = kRoomSize - length room
+                   in (take rest $ repeat '.') ++ room
+        f [a,b,c,d] = "###" ++ (a:'#':b:'#':c:'#':d:"###")
+        g [a,b,c,d] = "  #" ++ (a:'#':b:'#':c:'#':d:"#")
+
+display = concatMap displayStep . reverse
+
+main = interact $ unlines . display . solve . input

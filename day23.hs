@@ -51,13 +51,12 @@ moveRoom (hall, rooms) k
   | all (==k) room = []
   | left <= n && n <= right =
       let c = head room
-          goto j =
-            let dist = let energy = 10^(ord c - ord 'A')
-                           const = 1 + kRoomSize - length room
-                       in energy * (abs (j-n) + const)
-                hall' = M.insert j c hall
-                rooms' = M.insert k (tail room) rooms
-            in (dist, (hall', rooms'))
+          goto j = let energy = 10^(ord c - ord 'A')
+                       const = 1 + kRoomSize - length room
+                       dist = energy * (abs (j-n) + const)
+                       hall' = M.insert j c hall
+                       rooms' = M.insert k (tail room) rooms
+                   in (dist, (hall', rooms'))
       in map goto [x | x <- [left..right], odd x || x==0 || x==10]
   | otherwise = []
   where room = rooms M.! k

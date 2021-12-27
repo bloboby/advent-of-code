@@ -33,18 +33,19 @@ tryExplode :: Int -> SNum -> Maybe ([Int], SNum)
 tryExplode _ (Regular _) = Nothing
 tryExplode 4 (Pair (Regular l) (Regular r)) = Just ([l,r], Regular 0)
 tryExplode depth (Pair l r) = explodeL <|> explodeR
- where
-  explodeL =
-    let cleanup ([dl, dr], l') = ([dl, 0], Pair l' (propagate R dr r))
-    in cleanup <$> tryExplode (depth+1) l
-  explodeR =
-    let cleanup ([dl, dr], r') = ([0, dr], Pair (propagate L dl l) r')
-    in cleanup <$> tryExplode (depth+1) r
+  where
+    explodeL = cleanup L <$> tryExplode (depth+1) l
+    explodeR = cleanup R <$> tryExplode (depth+1) r
 
-propagate _ 0 snum = snum
-propagate _ diff (Regular n) = Regular (n+diff)
-propagate L diff (Pair l r) = Pair l (propagate L diff r)
-propagate R diff (Pair l r) = Pair (propagate R diff l) r
+    cleanup :: Direction -> ([Int], SNum) -> ([Int], SNum)
+    cleanup L ([dl, dr], l') = ([dl, 0], Pair l' (propagate R dr r))
+    cleanup R ([dl, dr], r') = ([0, dr], Pair (propagate L dl l) r')
+
+    propagate :: Direction -> Int -> SNum -> SNum
+    propagate _ 0 snum = snum
+    propagate _ diff (Regular n) = Regular (n+diff)
+    propagate L diff (Pair l r) = Pair l (propagate L diff r)
+    propagate R diff (Pair l r) = Pair (propagate R diff l) r
 
 trySplit :: SNum -> Maybe SNum
 trySplit (Regular n) =

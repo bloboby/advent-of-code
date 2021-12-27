@@ -1,6 +1,4 @@
-module Util
-( print
-) where
+module Util (print) where
 
 import Prelude hiding (print)
 

@@ -79,7 +79,7 @@ calculate (Operator _ t packets) =
   else
     let f = [(>), (<), (==)] !! (t-5)
         [a,b] = map calculate packets
-    in if f a b then 1 else 0
+    in fromEnum $ f a b
 
 solve s = map f $ lines s
   where p = fromRight undefined . parse decode ""

@@ -85,7 +85,7 @@ int main() {
   // Find cup 1 and print the answer.
   int one = input.find("1");
   std::cout << (long long) value(next(one))
-             * (long long) value(next(next(one)));
+             * (long long) value(next(next(one))) << std::endl;
   return 0;
 }
 

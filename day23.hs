@@ -1,10 +1,10 @@
-import qualified Data.Map as M
+import qualified Data.IntMap.Strict as M
 import Data.Char (digitToInt)
 import Data.List (elemIndex, sort)
 import Data.Maybe (fromJust)
 import Util
 
-type IM = M.Map Int Int
+type IM = M.IntMap Int
 
 initialise :: [Int] -> ([IM], Int)
 initialise v = (arrs, idx1)

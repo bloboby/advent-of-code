@@ -9,10 +9,10 @@ scoreShape [x]
 
 scoreRound1 round =
   let [n,m] = map scoreShape round
-  in case rerange (m-n) of
-    1 -> 6 + m
-    2 -> m
-    3 -> 3 + m
+  in m + case mod (m-n) 3 of
+    0 -> 3
+    1 -> 6
+    2 -> 0
 
 scoreRound2 [abc, xyz] =
   let n = scoreShape abc

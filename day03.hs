@@ -1,6 +1,5 @@
-import Data.Char (isLower, isUpper, ord)
-import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Char (isLower, isUpper, ord)
 import Util
 
 setToChar = head . S.elems

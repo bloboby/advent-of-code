@@ -14,13 +14,13 @@ parseMoves = map ((\[_,a,_,b,_,c] -> map read [a,b,c]) . words) . lines
 doMove :: Map Int [Char] -> [Int] -> Map Int [Char]
 doMove m [n,a,b] =
   let (from, to) = (m M.! a, m M.! b)
-      (moved, from') = (take n from, drop n from)
-      to' = moved ++ to  -- reverse moved ++ to
+      moved = take n from  -- reverse for part 1
+      (from', to') = (drop n from, moved ++ to)
   in M.insert a from' . M.insert b to' $ m
 
 main = do
   contents <- getContents
   let [rawStacks, rawMoves] = splitOn "\n\n" contents
-  let stacks = parseStacks rawStacks
-  let moves = parseMoves rawMoves
+      stacks = parseStacks rawStacks
+      moves = parseMoves rawMoves
   putStrLn . map head . M.elems $ foldl doMove stacks moves

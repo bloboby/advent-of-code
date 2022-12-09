@@ -1,5 +1,4 @@
 import qualified Data.Map as M
-import Data.List (sort)
 import Data.Map (Map)
 
 data Tree = Dir String (Map String Tree) | File String Int deriving Show
@@ -35,13 +34,12 @@ getSizes (File _ n) = ([], [n])
 getSizes (Dir _ m) =
   let concat (a, b) (c, d) = (a++c, b++d)
       (dirs, files) = M.foldr (\t acc -> concat (getSizes t) acc) ([],[]) m
-      curr = sum files
-  in (curr:dirs, files)
+  in ((sum files):dirs, files)
 
 main = do
   contents <- getContents
   let input = map words . tail . filter (/="$ ls") . lines $ contents
       dirSizes = fst . getSizes $ reconstruct (Dir "/" M.empty) [] input
       part1 = sum . filter (<= 100000) $ dirSizes
-      part2 = head . sort . filter (>= head dirSizes - 40000000) $ dirSizes
+      part2 = minimum . filter (>= head dirSizes - 40000000) $ dirSizes
   print (part1, part2)

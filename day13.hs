@@ -10,12 +10,13 @@ instance Ord Value where compare = compareValues
 
 -- parse
 
+parseValue :: Parser Value
 parseValue = try parseList <|> parseInteger
 
 parseList = do
-  _ <- char '['
+  char '['
   contents <- parseValue `sepBy` (char ',')
-  _ <- char ']'
+  char ']'
   return $ List contents
 
 parseInteger = do
@@ -32,8 +33,8 @@ compareValues (List l) (List r)
   | null l && null r = EQ
   | null l && not (null r) = LT
   | not (null l) && null r = GT
-  | cmp == EQ = compareValues (List as) (List bs)
-  | otherwise = cmp
+  | cmp /= EQ = cmp
+  | otherwise = compareValues (List as) (List bs)
   where (a:as) = l
         (b:bs) = r
         cmp = compareValues a b
@@ -42,9 +43,9 @@ compareValues (List l) (List r)
 
 parseLine = fromRight undefined . parse parseValue ""
 
-solve1 =
+solve1 packets =
   let filterLT (index, [l,r]) = if l < r then Just index else Nothing
-  in sum . mapMaybe filterLT . zip [1..] . chunksOf 2
+  in sum . mapMaybe filterLT . zip [1..] . chunksOf 2 $ packets
 
 solve2 packets =
   let d@[d1, d2] = map parseLine ["[[2]]", "[[6]]"]

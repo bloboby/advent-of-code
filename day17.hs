@@ -66,7 +66,7 @@ findRepeats s@(rocks, h, js) hist (r:rs)
   where cycles = M.filter validCycle hist
         curr = (fst $ head js, mod (fst r) 5, getProfile rocks)
         hist' = M.insertWith (++) curr [(fst r, h)] hist
-        s' = settle s $ move (snd r) (2,h+4)
+        s' = newRock s $ snd r
 
 extrapolate hist cycles =
   -- billion = a + n * xmod + dx

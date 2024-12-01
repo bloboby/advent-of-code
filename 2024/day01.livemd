@@ -1,0 +1,41 @@
+# Day 1
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("Documents/advent-of-code/2024/inputs/day01.txt")
+```
+
+```elixir
+parse = fn line ->
+  line |> String.split() |> Enum.map(&String.to_integer/1)
+end
+
+transpose = fn matrix ->
+  matrix |> List.zip() |> Enum.map(&Tuple.to_list/1)
+end
+
+lists =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(parse)
+  |> transpose.()
+```
+
+```elixir
+lists
+|> Enum.map(&Enum.sort/1)
+|> transpose.()
+|> Enum.map(fn [a, b] -> abs(a - b) end)
+|> Enum.sum()
+```
+
+```elixir
+[left, right] = lists
+inc = &(&1 + 1)
+histogram = Enum.reduce(right, %{}, &Map.update(&2, &1, 1, inc))
+
+left
+|> Enum.map(fn id -> id * Map.get(histogram, id, 0) end)
+|> Enum.sum()
+```

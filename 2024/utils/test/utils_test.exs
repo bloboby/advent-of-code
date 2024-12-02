@@ -3,6 +3,6 @@ defmodule UtilsTest do
   doctest Utils
 
   test "placeholder" do
-    assert true
+    assert Utils.read_2d_ints("day01")
   end
 end

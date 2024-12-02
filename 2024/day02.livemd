@@ -1,7 +1,7 @@
 # Day 2
 
 ```elixir
-Mix.install([{:utils, path: "~/Documents/advent-of-code/2024/utils"}])
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
 ```
 
 ## Solution

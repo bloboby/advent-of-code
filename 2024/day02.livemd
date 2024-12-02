@@ -1,0 +1,36 @@
+# Day 2
+
+```elixir
+Mix.install([{:utils, path: "~/Documents/advent-of-code/2024/utils"}])
+```
+
+## Solution
+
+```elixir
+reports = Utils.read_2d_ints("day02")
+```
+
+```elixir
+safe? = fn report ->
+  diffs =
+    [report, tl(report)]
+    |> List.zip()
+    |> Enum.map(fn {a, b} -> a - b end)
+
+  gradual = Enum.all?(diffs, fn d -> 1 <= abs(d) and abs(d) <= 3 end)
+  monotonic = Enum.all?(diffs, &(&1 > 0)) or Enum.all?(diffs, &(&1 < 0))
+  gradual and monotonic
+end
+
+Enum.count(reports, safe?)
+```
+
+```elixir
+tolerably_safe? = fn report ->
+  1..Enum.count(report)
+  |> Enum.map(&List.delete_at(report, &1 - 1))
+  |> Enum.any?(safe?)
+end
+
+Enum.count(reports, tolerably_safe?)
+```

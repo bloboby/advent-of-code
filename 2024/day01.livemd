@@ -1,41 +1,30 @@
 # Day 1
 
+```elixir
+Mix.install([{:utils, path: "~/Documents/advent-of-code/2024/utils"}])
+```
+
 ## Solution
 
 ```elixir
-{:ok, contents} = File.read("Documents/advent-of-code/2024/inputs/day01.txt")
-```
-
-```elixir
-parse = fn line ->
-  line |> String.split() |> Enum.map(&String.to_integer/1)
-end
-
-transpose = fn matrix ->
-  matrix |> List.zip() |> Enum.map(&Tuple.to_list/1)
-end
-
 lists =
-  contents
-  |> String.split("\n", trim: true)
-  |> Enum.map(parse)
-  |> transpose.()
+  "day01"
+  |> Utils.read_2d_ints()
+  |> Enum.zip_with(&(&1))
 ```
 
 ```elixir
 lists
 |> Enum.map(&Enum.sort/1)
-|> transpose.()
-|> Enum.map(fn [a, b] -> abs(a - b) end)
+|> Enum.zip_with(fn [a, b] -> abs(a - b) end)
 |> Enum.sum()
 ```
 
 ```elixir
 [left, right] = lists
-inc = &(&1 + 1)
-histogram = Enum.reduce(right, %{}, &Map.update(&2, &1, 1, inc))
+freq = Enum.frequencies(right)
 
 left
-|> Enum.map(fn id -> id * Map.get(histogram, id, 0) end)
+|> Enum.map(fn id -> id * Map.get(freq, id, 0) end)
 |> Enum.sum()
 ```

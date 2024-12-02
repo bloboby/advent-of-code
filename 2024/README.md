@@ -1,1 +1,1 @@
-Run with (Livebook)[https://livebook.dev/]
+Run with [Livebook](https://livebook.dev/)

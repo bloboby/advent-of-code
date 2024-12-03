@@ -1,0 +1,29 @@
+# Day 3
+
+## Solution
+
+```elixir
+{:ok, input} = File.read("#{__DIR__}/inputs/day03.txt")
+```
+
+```elixir
+mul = fn [_, a, b] -> String.to_integer(a) * String.to_integer(b) end
+
+~r/mul\((\d+),(\d+)\)/
+|> Regex.scan(input)
+|> Enum.map(mul)
+|> Enum.sum()
+```
+
+```elixir
+~r/mul\((\d+),(\d+)\)|do\(\)|don't\(\)/
+|> Regex.scan(input)
+|> Enum.reduce({0, true}, fn matches, {acc, enabled} ->
+  cond do
+    hd(matches) == "do()"    -> {acc, true}
+    hd(matches) == "don't()" -> {acc, false}
+    enabled                  -> {acc + mul.(matches), enabled}
+    not enabled              -> {acc, enabled}
+  end
+end)
+```

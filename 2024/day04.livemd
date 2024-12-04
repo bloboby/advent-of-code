@@ -1,0 +1,38 @@
+# Day 4
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day04.txt")
+
+lookup =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.to_charlist/1)
+  |> Enum.map(&Enum.with_index/1)
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {row, x} -> Enum.map(row, fn {c, y} -> {c, {x, y}} end) end)
+  |> Enum.reduce(%{}, fn {key, coords}, acc ->
+    Map.update(acc, key, MapSet.new([coords]), &MapSet.put(&1, coords))
+  end)
+```
+
+```elixir
+for {x, y} <- Map.get(lookup, ?X), dx <- -1..1, dy <- -1..1 do
+  found? = fn key, dist -> {x + dist * dx, y + dist * dy} in Map.get(lookup, key) end
+  found?.(?M, 1) and found?.(?A, 2) and found?.(?S, 3)
+end
+|> Enum.count(& &1)
+```
+
+```elixir
+for {x, y} <- Map.get(lookup, ?M), sign <- [-1, 1], vertical <- [false, true] do
+  found? = fn key, {delx, dely} ->
+    {dx, dy} = if vertical, do: {delx, dely}, else: {-dely, delx}
+    {x + sign * dx, y + sign * dy} in Map.get(lookup, key)
+  end
+
+  found?.(?M, {2, 0}) and found?.(?A, {1, 1}) and found?.(?S, {0, 2}) and found?.(?S, {2, 2})
+end
+|> Enum.count(& &1)
+```

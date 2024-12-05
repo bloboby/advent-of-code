@@ -1,0 +1,49 @@
+# Day 5
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day05.txt")
+
+parse = fn line, sep ->
+  line
+  |> String.split(sep)
+  |> Enum.map(&String.to_integer/1)
+end
+
+[raw_rules, raw_pages] =
+  contents
+  |> String.split("\n\n")
+  |> Enum.map(&String.split(&1, "\n", trim: true))
+
+[rules, pages] = [
+  Enum.map(raw_rules, &parse.(&1, "|")) |> MapSet.new(),
+  Enum.map(raw_pages, &parse.(&1, ","))
+]
+```
+
+```elixir
+ordered_page? = fn page ->
+  ipage = Enum.with_index(page)
+  pairs = for {x, i} <- ipage, {y, j} <- ipage, i < j, do: [x, y]
+  Enum.all?(pairs, &(&1 in rules))
+end
+
+pages
+|> Enum.filter(ordered_page?)
+|> Enum.map(&Enum.at(&1, &1 |> length() |> div(2)))
+|> Enum.sum()
+```
+
+```elixir
+reorder = fn page ->
+  degree = fn n -> Enum.count(page, &([n, &1] in rules)) end
+  Enum.sort_by(page, degree)
+end
+
+pages
+|> Enum.reject(ordered_page?)
+|> Enum.map(reorder)
+|> Enum.map(&Enum.at(&1, &1 |> length() |> div(2)))
+|> Enum.sum()
+```

@@ -1,0 +1,42 @@
+# Day 7
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day07.txt")
+
+parse = fn line ->
+  [raw_target | raw_numbers] = String.split(line)
+  target = raw_target |> String.trim(":") |> String.to_integer()
+  numbers = raw_numbers |> Enum.map(&String.to_integer/1)
+  {target, numbers}
+end
+
+equations = contents
+|> String.split("\n", trim: true)
+|> Enum.map(parse)
+```
+
+```elixir
+defmodule Day07 do
+  defp concat(a, b) do
+    [a, b] |> Enum.flat_map(&Integer.digits/1) |> Integer.undigits()
+  end
+
+  defp all_results_reversed([x]), do: [x]
+
+  defp all_results_reversed([x | xs]) do
+    prev = all_results_reversed(xs)
+    Enum.map(prev, &(x + &1)) ++ Enum.map(prev, &(x * &1)) ++ Enum.map(prev, &concat(&1, x))
+  end
+
+  def all_results(line) do
+    line |> Enum.reverse() |> all_results_reversed()
+  end
+end
+
+equations
+|> Enum.filter(fn {target, numbers} -> target in Day07.all_results(numbers) end)
+|> Enum.map(fn {target, _} -> target end)
+|> Enum.sum()
+```

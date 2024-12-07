@@ -1,0 +1,77 @@
+# Day 6
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solution
+
+```elixir
+{grid, exited?} = Utils.read_grid("day06")
+
+start = Enum.find_value(grid, fn {k, v} -> if v == ?^, do: k end)
+
+base_obstacles =
+  grid
+  |> Enum.filter(fn {_, char} -> char == ?# end)
+  |> Enum.map(fn {coords, _} -> coords end)
+  |> MapSet.new()
+```
+
+```elixir
+[up, down, left, right] = [{-1, 0}, {1, 0}, {0, -1}, {0, 1}]
+
+rotate = fn
+  ^up -> right
+  ^right -> down
+  ^down -> left
+  ^left -> up
+end
+
+add = fn {a, b}, {c, d} -> {a + c, b + d} end
+```
+
+```elixir
+simulate = fn f, obstacles, pos, dir, visited ->
+  cond do
+    exited?.(pos) ->
+      {visited, false}
+
+    {pos, dir} in visited ->
+      {visited, true}
+
+    add.(pos, dir) in obstacles ->
+      dir_ = rotate.(dir)
+      f.(f, obstacles, pos, dir_, visited)
+
+    true ->
+      pos_ = add.(pos, dir)
+      visited_ = MapSet.put(visited, {pos, dir})
+      f.(f, obstacles, pos_, dir, visited_)
+  end
+end
+
+{visited, _} = simulate.(simulate, base_obstacles, start, up, MapSet.new())
+path = visited |> Enum.map(fn {pos, _} -> pos end) |> Enum.uniq()
+Enum.count(path)
+```
+
+```elixir
+# this takes like 7 minutes
+add_obstacle? = fn obstacle ->
+  cond do
+    obstacle == start ->
+      false
+
+    obstacle in base_obstacles ->
+      false
+
+    true ->
+      obstacles = MapSet.put(base_obstacles, obstacle)
+      {_, looped} = simulate.(simulate, obstacles, start, up, MapSet.new())
+      looped
+  end
+end
+
+path |> Enum.count(add_obstacle?)
+```

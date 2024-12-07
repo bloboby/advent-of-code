@@ -1,20 +1,17 @@
 # Day 4
 
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
 ## Solution
 
 ```elixir
-{:ok, contents} = File.read("#{__DIR__}/inputs/day04.txt")
-
 lookup =
-  contents
-  |> String.split("\n", trim: true)
-  |> Enum.map(&String.to_charlist/1)
-  |> Enum.map(&Enum.with_index/1)
-  |> Enum.with_index()
-  |> Enum.flat_map(fn {row, x} -> Enum.map(row, fn {c, y} -> {c, {x, y}} end) end)
-  |> Enum.reduce(%{}, fn {key, coords}, acc ->
-    Map.update(acc, key, MapSet.new([coords]), &MapSet.put(&1, coords))
-  end)
+  Utils.read_grid("day04")
+  |> then(fn {grid, _} -> grid end)
+  |> Enum.group_by(fn {_, key} -> key end, fn {coords, _} -> coords end)
+  |> Enum.into(%{}, fn {k, v} -> {k, MapSet.new(v)} end)
 ```
 
 ```elixir

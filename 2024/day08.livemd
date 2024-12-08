@@ -1,0 +1,41 @@
+# Day 8
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solution
+
+```elixir
+{grid, outside?} = Utils.read_grid("day08")
+
+inside? = &(not outside?.(&1))
+
+fst = fn {a, _} -> a end
+snd = fn {_, b} -> b end
+add = fn {a, b}, {c, d} -> {a + c, b + d} end
+sub = fn {a, b}, {c, d} -> {a - c, b - d} end
+```
+
+```elixir
+part1 = fn a, b ->
+  diff = sub.(b, a)
+  [sub.(a, diff), add.(b, diff)] |> Enum.filter(inside?)
+end
+
+part2 = fn a, b ->
+  diff = sub.(b, a)
+  left = Stream.unfold(a, &{&1, sub.(&1, diff)})
+  right = Stream.unfold(b, &{&1, add.(&1, diff)})
+  Enum.map([left, right], &Enum.take_while(&1, inside?))
+end
+
+grid
+|> Enum.group_by(snd, fst)
+|> Map.drop([?.])
+|> Map.values()
+|> Enum.map(&for a <- &1, b <- &1, a != b, do: part2.(a, b))
+|> List.flatten()
+|> Enum.uniq()
+|> Enum.count()
+```

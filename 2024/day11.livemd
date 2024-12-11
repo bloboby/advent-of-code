@@ -1,0 +1,61 @@
+# Day 11
+
+## Solution
+
+```elixir
+defmodule Cache do
+  use Agent
+
+  def start do
+    Agent.start_link(fn -> %{} end, name: __MODULE__)
+    Agent.update(__MODULE__, fn _ -> %{} end)
+  end
+
+  def get(k) do
+    Agent.get(__MODULE__, &Map.get(&1, k))
+  end
+
+  def put(k, v) do
+    Agent.update(__MODULE__, &Map.put(&1, k, v))
+  end
+end
+
+defmodule Day11 do
+  defp transform(0), do: [1]
+
+  defp transform(stone) do
+    len = trunc(:math.log10(stone) + 1)
+
+    if rem(len, 2) == 0 do
+      n = 10 |> :math.pow(div(len, 2)) |> round()
+      [div(stone, n), rem(stone, n)]
+    else
+      [2024 * stone]
+    end
+  end
+
+  def blink(_, 0), do: 1
+
+  def blink(stone, n) do
+    cache = Cache.get({stone, n})
+
+    if is_nil(cache) do
+      result = stone |> transform() |> Enum.map(&blink(&1, n - 1)) |> Enum.sum()
+      Cache.put({stone, n}, result)
+      result
+    else
+      cache
+    end
+  end
+end
+
+{:ok, contents} = File.read("#{__DIR__}/inputs/day11.txt")
+
+Cache.start()
+
+contents
+|> String.split()
+|> Enum.map(&String.to_integer/1)
+|> Enum.map(&Day11.blink(&1, 75))
+|> Enum.sum()
+```

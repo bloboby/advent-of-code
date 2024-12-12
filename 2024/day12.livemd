@@ -1,0 +1,85 @@
+# Day 12
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solutionj
+
+```elixir
+defmodule Day12 do
+  use Agent
+
+  def init(grid) do
+    lookup = Map.new(grid)
+    Agent.start_link(fn -> lookup end, name: __MODULE__)
+    Agent.update(__MODULE__, fn _ -> lookup end)
+    grid
+  end
+
+  defp same(a, b) do
+    a_val = Agent.get(__MODULE__, &Map.get(&1, a))
+    b_val = Agent.get(__MODULE__, &Map.get(&1, b))
+    a_val == b_val
+  end
+
+  defp nbrs({x, y}), do: [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+
+  defp dfs(xy, region) do
+    region_ = MapSet.put(region, xy)
+
+    xy
+    |> nbrs()
+    |> Enum.reject(&(&1 in region_))
+    |> Enum.filter(&same(&1, xy))
+    |> Enum.reduce(region_, &dfs(&1, &2))
+  end
+
+  def find_region({xy, _}, {regions, seen}) do
+    if xy in seen do
+      {regions, seen}
+    else
+      region = dfs(xy, MapSet.new())
+      {[region | regions], MapSet.union(seen, region)}
+    end
+  end
+
+  def perimeter(region) do
+    Enum.reduce(region, 0, fn xy, acc ->
+      delta = xy |> nbrs() |> Enum.reject(&same(&1, xy)) |> length()
+      acc + delta
+    end)
+  end
+
+  defp corner_nbrs({x, y}) do
+    rotate_xy = fn {x1, y1} -> {x + y1 - y, y - x1 + x} end
+
+    [{x + 1, y}, {x, y + 1}, {x + 1, y + 1}]
+    |> Stream.iterate(&Enum.map(&1, rotate_xy))
+    |> Enum.take(4)
+  end
+
+  defp count_corners(xy, corner) do
+    [nbr1, nbr2, diag] = Enum.map(corner, &same(&1, xy))
+    outside = not (nbr1 or nbr2)
+    inside = nbr1 and nbr2 and not diag
+    Enum.count([inside, outside], & &1)
+  end
+
+  def sides(region) do
+    Enum.reduce(region, 0, fn xy, acc ->
+      delta = xy |> corner_nbrs() |> Enum.map(&count_corners(xy, &1)) |> Enum.sum()
+      acc + delta
+    end)
+  end
+end
+
+{grid, _} = Utils.read_grid("day12")
+
+grid
+|> Day12.init()
+|> Enum.reduce({[], MapSet.new()}, &Day12.find_region(&1, &2))
+|> elem(0)
+|> Enum.map(&(Enum.count(&1) * Day12.sides(&1)))
+|> Enum.sum()
+```

@@ -1,0 +1,49 @@
+# Day 13
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day13.txt")
+
+parse_ints = fn line ->
+  ~r/\D+(\d+)\D+(\d+)/
+  |> Regex.run(line)
+  |> tl()
+  |> Enum.map(&String.to_integer/1)
+end
+
+parse = fn line ->
+  line
+  |> String.split("\n", trim: true)
+  |> Enum.map(parse_ints)
+end
+
+adjust_prize = fn [a, b, [px, py]], extra -> [a, b, [px + extra, py + extra]] end
+
+try_div = fn a, b ->
+  if rem(a, b) != 0, do: nil, else: div(a, b)
+end
+
+solve = fn [[ax, ay], [bx, by], [px, py]] ->
+  a_coeff = ax * by - ay * bx
+  pa_coeff = px * by - py * bx
+  a = try_div.(pa_coeff, a_coeff)
+
+  b_coeff = bx * ay - by * ax
+  pb_coeff = px * ay - py * ax
+  b = try_div.(pb_coeff, b_coeff)
+
+  if is_nil(a) or is_nil(b), do: 0, else: 3 * a + b
+end
+
+contents
+|> String.split("\n\n")
+|> Enum.map(parse)
+|> Enum.map(&adjust_prize.(&1, 10_000_000_000_000))
+|> Enum.map(solve)
+|> Enum.sum()
+```

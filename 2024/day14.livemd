@@ -1,0 +1,88 @@
+# Day 14
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day14.txt")
+
+parse = fn line ->
+  ~r/p=(-?\d+),(-?\d+) v=(-?\d+),(-?\d+)/
+  |> Regex.run(line)
+  |> tl()
+  |> Enum.map(&String.to_integer/1)
+end
+
+mod = fn a, b ->
+  m = rem(a, b)
+  if m >= 0, do: m, else: m + b
+end
+
+move = fn [x, y, dx, dy], seconds, [xmax, ymax] ->
+  [sx, sy] = [mod.(seconds, xmax), mod.(seconds, ymax)]
+  [mod.(x + sx * dx, xmax), mod.(y + sy * dy, ymax)]
+end
+
+quadrant = fn robot, seconds, [xmax, ymax] ->
+  [x, y] = move.(robot, seconds, [xmax, ymax])
+  [midx, midy] = [div(xmax, 2), div(ymax, 2)]
+
+  cond do
+    x == midx or y == midy -> nil
+    x < midx and y < midy -> 1
+    x > midx and y < midy -> 2
+    x < midx and y > midy -> 3
+    x > midx and y > midy -> 4
+  end
+end
+
+robots =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(parse)
+
+# Part 1
+robots
+|> Enum.map(&quadrant.(&1, 100, [101, 103]))
+|> Enum.reject(&is_nil/1)
+|> Enum.frequencies()
+|> Map.values()
+|> Enum.product()
+```
+
+```elixir
+move_all = fn robots, seconds ->
+  Enum.map(robots, &move.(&1, seconds, [101, 103]))
+end
+
+sq_err = fn points ->
+  [xs, ys] = Enum.zip_with(points, & &1)
+  [x_mean, y_mean] = Enum.map([xs, ys], &(Enum.sum(&1) / Enum.count(&1)))
+
+  points
+  |> Enum.map(fn [x, y] -> abs(x - x_mean) + abs(y - y_mean) end)
+  |> Enum.map(&(&1 * &1))
+  |> Enum.sum()
+end
+
+0..10000
+|> Enum.map(&{move_all.(robots, &1), &1})
+|> Enum.map(fn {robots, i} -> {sq_err.(robots), i} end)
+|> Enum.sort()
+|> Enum.take(10)
+```
+
+```elixir
+visualise = fn points ->
+  lookup = MapSet.new(points)
+
+  for j <- 0..102 do
+    for i <- 0..100 do
+      if [i, j] in lookup, do: ?#, else: ?.
+    end
+  end
+  |> Enum.join("\n")
+  |> IO.puts()
+end
+
+robots |> move_all.(8149) |> visualise.()
+```

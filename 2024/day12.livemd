@@ -4,7 +4,7 @@
 Mix.install([{:utils, path: "#{__DIR__}/utils"}])
 ```
 
-## Solutionj
+## Solution
 
 ```elixir
 defmodule Day12 do

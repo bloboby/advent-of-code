@@ -1,0 +1,158 @@
+# Day 15
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day15.txt")
+
+[raw_grid, raw_moves] =
+  contents
+  |> String.split("\n\n")
+  |> Enum.map(&String.split(&1, "\n", trim: true))
+
+grid = raw_grid |> Utils.parse_grid() |> elem(0) |> Map.new()
+moves = raw_moves |> Enum.join() |> String.to_charlist()
+```
+
+```elixir
+robot = fn grid ->
+  grid |> Enum.find(fn {_, v} -> v == ?@ end) |> elem(0)
+end
+
+display = fn coords ->
+  {{xmax, ymax}, _} = Enum.max(coords)
+
+  for i <- 0..xmax do
+    for j <- 0..ymax do
+      Map.get(coords, {i, j})
+    end
+  end
+  |> Enum.join("\n")
+  |> IO.puts()
+
+  coords
+end
+```
+
+```elixir
+defmodule Day15 do
+  defp step({x, y}, c) do
+    case c do
+      ?^ -> {x - 1, y}
+      ?v -> {x + 1, y}
+      ?< -> {x, y - 1}
+      ?> -> {x, y + 1}
+    end
+  end
+
+  defp traverse(move, grid, curr, objects) do
+    val = Map.get(grid, curr)
+
+    cond do
+      val == ?# ->
+        {:blocked, objects}
+
+      val == ?. ->
+        {:move, objects}
+
+      true ->
+        traverse(move, grid, step(curr, move), [curr | objects])
+    end
+  end
+
+  # Hacky pattern match on empty queue
+  defp traverse_wide(_, _, {[], []}, _, objects), do: {:move, objects}
+
+  defp traverse_wide(move, grid, bfs, seen, objects) do
+    {{:value, curr}, bfs} = :queue.out(bfs)
+    seen_ = MapSet.put(seen, curr)
+    objects_ = [curr | objects]
+    next = step(curr, move)
+    val = Map.get(grid, next)
+
+    cond do
+      curr in seen ->
+        traverse_wide(move, grid, bfs, seen, objects)
+
+      val == ?# ->
+        {:blocked, objects}
+
+      val == ?. ->
+        traverse_wide(move, grid, bfs, seen_, objects_)
+
+      true ->
+        {x, y} = next
+
+        extra =
+          case val do
+            ?[ -> {x, y + 1}
+            ?] -> {x, y - 1}
+          end
+
+        bfs = :queue.in(next, bfs)
+        bfs = :queue.in(extra, bfs)
+        traverse_wide(move, grid, bfs, seen_, objects_)
+    end
+  end
+
+  defp update_grid(move, grid, curr) do
+    grid
+    |> Map.put(step(curr, move), Map.get(grid, curr))
+    |> Map.put(curr, ?.)
+  end
+
+  def execute(move, {grid, robot}, wide \\ false) do
+    {result, objects} =
+      if wide and (move == ?^ or move == ?v) do
+        traverse_wide(move, grid, :queue.from_list([robot]), MapSet.new(), [])
+      else
+        traverse(move, grid, robot, [])
+      end
+
+    if result == :blocked do
+      {grid, robot}
+    else
+      grid_ = Enum.reduce(objects, grid, &update_grid(move, &2, &1))
+      robot_ = step(robot, move)
+      {grid_, robot_}
+    end
+  end
+
+  def sum_boxes(grid, target) do
+    grid
+    |> Enum.filter(fn {_, v} -> v == target end)
+    |> Enum.map(fn {{x, y}, _} -> 100 * x + y end)
+    |> Enum.sum()
+  end
+end
+
+moves
+|> Enum.reduce({grid, robot.(grid)}, &Day15.execute/2)
+|> elem(0)
+|> Day15.sum_boxes(?O)
+```
+
+```elixir
+expand = fn {{x, y}, v} ->
+  [a, b] =
+    case v do
+      ?# -> ~c"##"
+      ?O -> ~c"[]"
+      ?. -> ~c".."
+      ?@ -> ~c"@."
+    end
+
+  [{{x, 2 * y}, a}, {{x, 2 * y + 1}, b}]
+end
+
+grid2 = grid |> Enum.flat_map(expand) |> Map.new()
+
+moves
+|> Enum.reduce({grid2, robot.(grid2)}, &Day15.execute(&1, &2, true))
+|> elem(0)
+|> Day15.sum_boxes(?[)
+```

@@ -14,8 +14,7 @@ defmodule Utils do
     |> Enum.map(&parse_ints/1)
   end
 
-  def read_grid(filename) do
-    lines = read_contents(filename) |> String.split("\n", trim: true)
+  def parse_grid(lines) do
     n = length(lines)
     m = lines |> hd |> String.length()
     oob? = fn {x, y} -> x < 0 or y < 0 or x >= n or y >= m end
@@ -28,5 +27,12 @@ defmodule Utils do
       |> Enum.flat_map(fn {row, x} -> Enum.map(row, fn {c, y} -> {{x, y}, c} end) end)
 
     {grid, oob?}
+  end
+
+  def read_grid(filename) do
+    filename
+    |> read_contents()
+    |> String.split("\n", trim: true)
+    |> parse_grid()
   end
 end

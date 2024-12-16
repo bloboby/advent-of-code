@@ -1,0 +1,91 @@
+# Day 16
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}, {:heap, "~> 3.0"}])
+```
+
+## Solution
+
+```elixir
+defmodule Day16 do
+  def nbrs({x, y}) do
+    %{
+      :north => {x - 1, y},
+      :south => {x + 1, y},
+      :east => {x, y + 1},
+      :west => {x, y - 1}
+    }
+  end
+
+  def dijkstra(grid, queue, seen) do
+    {score, curr, dir} = Heap.root(queue)
+    queue = Heap.pop(queue)
+    val = Map.get(grid, curr)
+
+    cond do
+      val == ?E ->
+        score
+
+      val == ?# or {curr, dir} in seen ->
+        dijkstra(grid, queue, seen)
+
+      true ->
+        add_nbr = fn {nbr_dir, nbr}, acc ->
+          score_ = if nbr_dir == dir, do: score + 1, else: score + 1001
+          Heap.push(acc, {score_, nbr, nbr_dir})
+        end
+
+        queue = curr |> nbrs() |> Enum.reduce(queue, add_nbr)
+        dijkstra(grid, queue, MapSet.put(seen, {curr, dir}))
+    end
+  end
+
+  def part2(target, grid, queue, best) do
+    if Heap.empty?(queue) do
+      best
+    else
+      {score, curr, dir, tiles} = Heap.root(queue)
+      queue = Heap.pop(queue)
+      val = Map.get(grid, curr)
+      {prev_score, prev_tiles} = Map.get(best, {curr, dir}, {target, MapSet.new()})
+
+      cond do
+        # val == ?E and score > target ->
+        #   best
+
+        val == ?# or score > prev_score ->
+          part2(target, grid, queue, best)
+
+        true ->
+          add_nbr = fn {nbr_dir, nbr}, acc ->
+            score_ = if nbr_dir == dir, do: score + 1, else: score + 1001
+            Heap.push(acc, {score_, nbr, nbr_dir, MapSet.put(tiles, nbr)})
+          end
+
+          queue = curr |> nbrs() |> Enum.reduce(queue, add_nbr)
+          tiles_ = if score < prev_score, do: tiles, else: MapSet.union(tiles, prev_tiles)
+          best_ = Map.put(best, {curr, dir}, {score, tiles_})
+
+          part2(target, grid, queue, best_)
+      end
+    end
+  end
+end
+
+grid = "day16" |> Utils.read_grid() |> elem(0) |> Map.new()
+start = grid |> Enum.find(fn {_, v} -> v == ?S end) |> elem(0)
+queue = Heap.min() |> Heap.push({0, start, :east})
+best_score = Day16.dijkstra(grid, queue, MapSet.new())
+```
+
+```elixir
+queue2 = Heap.min() |> Heap.push({0, start, :east, MapSet.new([start])})
+end_tile = grid |> Enum.find(fn {_, v} -> v == ?E end) |> elem(0)
+
+# 12 minutes
+Day16.part2(best_score, grid, queue2, %{})
+|> Enum.filter(fn {{pos, _}, _} -> pos == end_tile end)
+|> Enum.map(fn {_, {_, tiles}} -> tiles end)
+|> Enum.reduce(&MapSet.union/2)
+|> Enum.count()
+```

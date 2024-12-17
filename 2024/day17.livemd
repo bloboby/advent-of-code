@@ -1,0 +1,113 @@
+# Day 17
+
+## Solution
+
+```elixir
+defmodule State do
+  defstruct [:program, :a, :b, :c, ptr: 0, output: []]
+end
+```
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day17.txt")
+
+{raw_registers, [raw_program]} =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.split/1)
+  |> Enum.map(&List.last/1)
+  |> Enum.split(3)
+
+[a, b, c] = Enum.map(raw_registers, &String.to_integer/1)
+
+program =
+  raw_program
+  |> String.split(",")
+  |> Enum.map(&String.to_integer/1)
+  |> List.to_tuple()
+
+start = %State{program: program, a: a, b: b, c: c}
+```
+
+```elixir
+defmodule Part1 do
+  defp pow2(n), do: :math.pow(2, n) |> round()
+  
+  def execute(state) when state.ptr >= tuple_size(state.program) do
+    state.output |> Enum.reverse() |> Enum.join(",")
+  end
+
+  def execute(state) do
+    opcode = elem(state.program, state.ptr)
+    operand = elem(state.program, state.ptr + 1)
+    state = %{state | ptr: state.ptr + 2}
+
+    combo =
+      case operand do
+        4 -> state.a
+        5 -> state.b
+        6 -> state.c
+        7 -> :error
+        _ -> operand
+      end
+
+    state_ =
+      case opcode do
+        0 -> %{state | a: div(state.a, pow2(combo))}
+        1 -> %{state | b: Bitwise.bxor(state.b, operand)}
+        2 -> %{state | b: rem(combo, 8)}
+        3 -> if state.a == 0, do: state, else: %{state | ptr: operand}
+        4 -> %{state | b: Bitwise.bxor(state.b, state.c)}
+        5 -> %{state | output: [rem(combo, 8) | state.output]}
+        6 -> %{state | b: div(state.a, pow2(combo))}
+        7 -> %{state | c: div(state.a, pow2(combo))}
+      end
+
+    execute(state_)
+  end
+end
+
+Part1.execute(start)
+```
+
+```elixir
+# All the digit functions operate in reverse.
+defmodule Part2 do
+  defp pow2(n), do: :math.pow(2, n) |> round()
+
+  def oct2dec([]), do: 0
+  def oct2dec([x | xs]), do: x + 8 * oct2dec(xs)
+
+  # Hardcoded on input
+  defp get_output(digits) do
+    a = oct2dec(digits)
+    b = a |> rem(8) |> Bitwise.bxor(5)
+    c = div(a, pow2(b))
+    b = b |> Bitwise.bxor(6) |> Bitwise.bxor(c)
+    rem(b, 8)
+  end
+
+  defp extend_input(output, digits) do
+    0..7
+    |> Enum.map(&[&1 | digits])
+    |> Enum.filter(&(get_output(&1) == output))
+  end
+
+  def extend_all_inputs(output, inputs) do
+    Enum.flat_map(inputs, &extend_input(output, &1))
+  end
+end
+
+part2 =
+  program
+  |> Tuple.to_list()
+  |> Enum.reverse()
+  |> Enum.reduce([[]], &Part2.extend_all_inputs/2)
+  |> Enum.map(&Part2.oct2dec/1)
+  |> Enum.min()
+```
+
+```elixir
+# Sanity check
+Part1.execute(%{start | a: part2}) == raw_program
+```

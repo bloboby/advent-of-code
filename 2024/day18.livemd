@@ -1,0 +1,69 @@
+# Day 18
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day18.txt")
+
+parse = fn line ->
+  line |> String.split(",") |> Enum.map(&String.to_integer/1)
+end
+
+input =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(parse)
+```
+
+```elixir
+defmodule Day18 do
+  defp nbrs(corrupted, size, {x, y}) do
+    [{x, y + 1}, {x, y - 1}, {x + 1, y}, {x - 1, y}]
+    |> Enum.filter(fn {a, b} -> a >= 0 and b >= 0 and a <= size and b <= size end)
+    |> Enum.reject(&(&1 in corrupted))
+  end
+
+  # Hacky pattern match on empty queue
+  defp bfs(_, _, {[], []}, _), do: :unreachable
+
+  defp bfs(corrupted, size, queue, seen) do
+    {{:value, {node, dist}}, queue} = :queue.out(queue)
+
+    cond do
+      node == {size, size} ->
+        dist
+
+      node in seen ->
+        bfs(corrupted, size, queue, seen)
+
+      true ->
+        queue_ =
+          nbrs(corrupted, size, node)
+          |> Enum.reduce(queue, &:queue.in({&1, dist + 1}, &2))
+
+        seen_ = MapSet.put(seen, node)
+        bfs(corrupted, size, queue_, seen_)
+    end
+  end
+
+  def path_size(input, size, n) do
+    corrupted = input |> Enum.take(n) |> Enum.map(&List.to_tuple/1) |> MapSet.new()
+    queue = :queue.from_list([{{0, 0}, 0}])
+    bfs(corrupted, size, queue, MapSet.new())
+  end
+
+  def binary_search(input, _, lo, hi) when hi == lo + 1, do: Enum.at(input, lo)
+
+  def binary_search(input, size, lo, hi) do
+    mid = div(lo + hi, 2)
+
+    case path_size(input, size, mid) do
+      :unreachable -> binary_search(input, size, lo, mid)
+      _ -> binary_search(input, size, mid, hi)
+    end
+  end
+end
+
+# Day18.path_size(input, 70, 1024)
+Day18.binary_search(input, 70, 0, length(input))
+```

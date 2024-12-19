@@ -1,0 +1,46 @@
+# Day 19
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day19.txt")
+[raw_towels, raw_designs] = String.split(contents, "\n\n")
+towels = String.split(raw_towels, ", ")
+designs = raw_designs |> String.split("\n", trim: true)
+```
+
+```elixir
+defmodule Day19 do
+  defp tail(string) do
+    <<_::binary-1, rest::binary>> = string
+    rest
+  end
+
+  def possible?(towels, design, i, dp) do
+    ways = Map.get(dp, i, 0)
+
+    cond do
+      design == "" ->
+        ways
+
+      ways == 0 ->
+        possible?(towels, tail(design), i + 1, dp)
+
+      true ->
+        dp_ =
+          towels
+          |> Enum.filter(&String.starts_with?(design, &1))
+          |> Enum.map(&String.length/1)
+          |> Enum.reduce(dp, fn k, acc ->
+            Map.update(acc, i + k, ways, &(&1 + ways))
+          end)
+
+        possible?(towels, tail(design), i + 1, dp_)
+    end
+  end
+end
+
+designs
+|> Enum.map(&Day19.possible?(towels, &1, 0, %{0 => 1}))
+|> Enum.sum()
+```

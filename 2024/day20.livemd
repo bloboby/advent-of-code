@@ -1,0 +1,43 @@
+# Day 20
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}, {:heap, "~> 3.0"}])
+```
+
+## Solution
+
+```elixir
+defmodule Day20 do
+  def nbrs({x, y}), do: [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+
+  def path(grid, curr, i, path) do
+    path = Map.put(path, curr, i)
+
+    if Map.get(grid, curr) == ?E do
+      path
+    else
+      bad = fn nbr -> Map.has_key?(path, nbr) or Map.get(grid, nbr) == ?# end
+      [nbr] = curr |> nbrs() |> Enum.reject(bad)
+      path(grid, nbr, i + 1, path)
+    end
+  end
+
+  def cheats(path, {x, y}, d) do
+    curr = Map.get(path, {x, y})
+
+    for i <- -d..d, j <- -d..d, t <- 2..d, abs(i) + abs(j) == t do
+      Map.get(path, {x + i, y + j}, 0) - curr - t
+    end
+    |> Enum.reject(&(&1 <= 0))
+  end
+end
+
+{grid, oob?} = Utils.read_grid("day20")
+start = grid |> Enum.find(fn {_, v} -> v == ?S end) |> elem(0)
+path = Day20.path(Map.new(grid), start, 0, %{})
+
+path
+|> Map.keys()
+|> Enum.flat_map(&Day20.cheats(path, &1, 20))
+|> Enum.count(&(&1 >= 100))
+```

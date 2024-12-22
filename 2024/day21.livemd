@@ -1,0 +1,130 @@
+# Day 21
+
+## Solution
+
+```elixir
+defmodule Numeric do
+  defp keypad do
+    %{
+      ?7 => {0, 0},
+      ?8 => {0, 1},
+      ?9 => {0, 2},
+      ?4 => {1, 0},
+      ?5 => {1, 1},
+      ?6 => {1, 2},
+      ?1 => {2, 0},
+      ?2 => {2, 1},
+      ?3 => {2, 2},
+      ?0 => {3, 1},
+      ?A => {3, 2}
+    }
+  end
+
+  defp moves({from, to}) do
+    {a, b} = keypad()[from]
+    {c, d} = keypad()[to]
+    {u, r} = {a - c, d - b}
+
+    vert = String.duplicate(if(u >= 0, do: "^", else: "v"), abs(u))
+    horz = String.duplicate(if(r >= 0, do: ">", else: "<"), abs(r))
+
+    dirs =
+      cond do
+        a == 3 and d == 0 -> [vert <> horz]
+        b == 0 and c == 3 -> [horz <> vert]
+        true -> [vert <> horz, horz <> vert] |> Enum.uniq()
+      end
+
+    Enum.map(dirs, &String.to_charlist(&1 <> "A"))
+  end
+
+  def inputs(code) do
+    [?A | code] |> Enum.zip(code) |> Enum.map(&moves/1)
+  end
+end
+```
+
+```elixir
+defmodule Cache do
+  use Agent
+
+  def start do
+    Agent.start_link(fn -> %{} end, name: __MODULE__)
+    Agent.update(__MODULE__, fn _ -> %{} end)
+  end
+
+  def get(k) do
+    Agent.get(__MODULE__, &Map.get(&1, k))
+  end
+
+  def put(k, v) do
+    Agent.update(__MODULE__, &Map.put(&1, k, v))
+  end
+end
+
+defmodule Directional do
+  defp keypad do
+    %{
+      ?^ => {0, 1},
+      ?A => {0, 2},
+      ?< => {1, 0},
+      ?v => {1, 1},
+      ?> => {1, 2}
+    }
+  end
+
+  defp moves({from, to}) do
+    {a, b} = keypad()[from]
+    {c, d} = keypad()[to]
+    {u, r} = {a - c, d - b}
+
+    vert = String.duplicate(if(u >= 0, do: "^", else: "v"), abs(u))
+    horz = String.duplicate(if(r >= 0, do: ">", else: "<"), abs(r))
+
+    dirs =
+      cond do
+        a == 0 and d == 0 -> [vert <> horz]
+        b == 0 and c == 0 -> [horz <> vert]
+        true -> [vert <> horz, horz <> vert] |> Enum.uniq()
+      end
+
+    Enum.map(dirs, &String.to_charlist(&1 <> "A"))
+  end
+
+  defp f(code, 0), do: length(code)
+
+  defp f(code, n) do
+    cache = Cache.get({code, n})
+
+    if is_nil(cache) do
+      result = [?A | code] |> Enum.zip(code) |> Enum.map(&moves/1) |> score(n - 1)
+      Cache.put({code, n}, result)
+      result
+    else
+      cache
+    end
+  end
+
+  def score(moves, n) do
+    moves
+    |> Enum.map(fn codes -> codes |> Enum.map(&f(&1, n)) |> Enum.min() end)
+    |> Enum.sum()
+  end
+end
+```
+
+```elixir
+complexity = fn code, n ->
+  len = code |> String.to_charlist() |> Numeric.inputs() |> Directional.score(n)
+  num = code |> String.replace("A", "") |> String.to_integer()
+  len * num
+end
+
+{:ok, contents} = File.read("#{__DIR__}/inputs/day21.txt")
+Cache.start()
+
+contents
+|> String.split("\n", trim: true)
+|> Enum.map(&complexity.(&1, 25))
+|> Enum.sum()
+```

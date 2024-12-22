@@ -1,0 +1,57 @@
+# Day 10
+
+```elixir
+Mix.install([{:utils, path: "#{__DIR__}/utils"}])
+```
+
+## Solution
+
+```elixir
+defmodule Day10 do
+  defp nbrs({x, y}), do: [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+
+  def peaks(lookup, curr) do
+    val = lookup[curr]
+
+    if val == ?9 do
+      MapSet.new([curr])
+    else
+      curr
+      |> nbrs()
+      |> Enum.filter(&(Map.get(lookup, &1, -1) == val + 1))
+      |> Enum.map(&peaks(lookup, &1))
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+    end
+  end
+
+  def rating(lookup, curr) do
+    val = lookup[curr]
+
+    if val == ?9 do
+      1
+    else
+      curr
+      |> nbrs()
+      |> Enum.filter(&(Map.get(lookup, &1, -1) == val + 1))
+      |> Enum.map(&rating(lookup, &1))
+      |> Enum.sum()
+    end
+  end
+end
+
+{grid, oob?} = Utils.read_grid("day10")
+trailheads = grid |> Enum.filter(fn {_, v} -> v == ?0 end) |> Enum.map(&elem(&1, 0))
+lookup = Map.new(grid)
+
+# Part 1
+trailheads
+|> Enum.map(&Day10.peaks(lookup, &1))
+|> Enum.map(&Enum.count/1)
+|> Enum.sum()
+|> IO.inspect()
+
+# Part 2
+trailheads
+|> Enum.map(&Day10.rating(lookup, &1))
+|> Enum.sum()
+```

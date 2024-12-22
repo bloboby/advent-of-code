@@ -1,0 +1,47 @@
+# Day 22
+
+## Solution
+
+```elixir
+defmodule Day22 do
+  defp mix_prune(n, m), do: Bitwise.bxor(n, m) |> rem(16_777_216)
+
+  defp next(n) do
+    n = (64 * n) |> mix_prune(n)
+    n = div(n, 32) |> mix_prune(n)
+    (2048 * n) |> mix_prune(n)
+  end
+
+  def secrets(start, reps) do
+    [start | Enum.scan(1..reps, start, fn _, acc -> next(acc) end)]
+  end
+
+  def changes(list) do
+    {init, rest} = list |> Enum.map(&rem(&1, 10)) |> Enum.split(4)
+
+    rest
+    |> Enum.reduce({init, %{}}, fn e, {[a, b, c, d], acc} ->
+      {[b, c, d, e], Map.put_new(acc, [b - a, c - b, d - c, e - d], e)}
+    end)
+    |> elem(1)
+  end
+end
+
+{:ok, contents} = File.read("#{__DIR__}/inputs/day22.txt")
+
+secrets =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.to_integer/1)
+  |> Enum.map(&Day22.secrets(&1, 2000))
+
+# Part 1
+secrets |> Enum.map(&List.last/1) |> Enum.sum() |> IO.inspect()
+
+# Part 2
+secrets
+|> Enum.map(&Day22.changes/1)
+|> Enum.reduce(&Map.merge(&1, &2, fn _, v1, v2 -> v1 + v2 end))
+|> Map.values()
+|> Enum.max()
+```

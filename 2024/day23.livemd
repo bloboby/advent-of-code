@@ -26,7 +26,7 @@ end)
 ```
 
 ```elixir
-largest_kn = fn x ->
+greedy_clique = fn x ->
   adj[x]
   |> Enum.reduce(
     MapSet.new(),
@@ -35,10 +35,17 @@ largest_kn = fn x ->
   |> MapSet.put(x)
 end
 
-adj
-|> Map.keys()
-|> Enum.map(largest_kn)
-|> Enum.max_by(&Enum.count/1)
-|> Enum.sort()
-|> Enum.join(",")
+maybe_answer =
+  adj
+  |> Map.keys()
+  |> Enum.map(greedy_clique)
+  |> Enum.max_by(&Enum.count/1)
+
+max_degree = adj |> Map.values() |> Enum.map(&Enum.count/1) |> Enum.max()
+
+if Enum.count(maybe_answer) >= max_degree do
+  # Max clique size is (max_degree + 1) and must be found by the greedy algorithm.
+  # If not, but there is a K-(max_degree), then that is the answer.
+  maybe_answer |> Enum.sort() |> Enum.join(",")
+end
 ```

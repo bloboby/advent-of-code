@@ -1,0 +1,44 @@
+# Day 23
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day23.txt")
+
+adj =
+  contents
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.split(&1, "-"))
+  |> Enum.reduce(%{}, fn [a, b], acc ->
+    acc
+    |> Map.update(a, MapSet.new([b]), &MapSet.put(&1, b))
+    |> Map.update(b, MapSet.new([a]), &MapSet.put(&1, a))
+  end)
+
+# Part 1
+adj
+|> Enum.filter(fn {k, _} -> String.starts_with?(k, "t") end)
+|> Enum.flat_map(fn {k, v} ->
+  for a <- v, b <- v, b in adj[a], do: MapSet.new([k, a, b])
+end)
+|> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1))
+|> Enum.count()
+```
+
+```elixir
+largest_kn = fn x ->
+  adj[x]
+  |> Enum.reduce(
+    MapSet.new(),
+    &if(MapSet.subset?(&2, adj[&1]), do: MapSet.put(&2, &1), else: &2)
+  )
+  |> MapSet.put(x)
+end
+
+adj
+|> Map.keys()
+|> Enum.map(largest_kn)
+|> Enum.max_by(&Enum.count/1)
+|> Enum.sort()
+|> Enum.join(",")
+```

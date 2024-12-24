@@ -1,0 +1,149 @@
+# Day 24
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day24.txt")
+
+parse_wire = fn line ->
+  [wire, val] = String.split(line, ": ")
+  {wire, val == "1"}
+end
+
+parse_gate = fn line ->
+  [gate, wire] = String.split(line, " -> ")
+  {wire, String.split(gate, " ")}
+end
+
+[raw_wires, raw_gates] =
+  contents
+  |> String.split("\n\n")
+  |> Enum.map(&String.split(&1, "\n", trim: true))
+
+wires = Enum.into(raw_wires, %{}, parse_wire)
+gates = Enum.into(raw_gates, %{}, parse_gate)
+```
+
+```elixir
+defmodule Day24 do
+  def bits2dec([]), do: 0
+  def bits2dec([x | xs]), do: if(x, do: 1, else: 0) + 2 * bits2dec(xs)
+
+  def dec2bits(0), do: []
+  def dec2bits(n), do: [rem(n, 2) == 1 | n |> div(2) |> dec2bits()]
+
+  def prefixes(lookup, prefix) do
+    lookup
+    |> Map.keys()
+    |> Enum.filter(&String.starts_with?(&1, prefix))
+    |> Enum.sort()
+  end
+
+  def evaluate(lookup, wire) do
+    case lookup[wire] do
+      [a, "AND", b] -> evaluate(lookup, a) and evaluate(lookup, b)
+      [a, "OR", b] -> evaluate(lookup, a) or evaluate(lookup, b)
+      [a, "XOR", b] -> evaluate(lookup, a) != evaluate(lookup, b)
+      val -> val
+    end
+  end
+end
+
+xs = Day24.prefixes(wires, "x")
+ys = Day24.prefixes(wires, "y")
+zs = Day24.prefixes(gates, "z")
+
+lookup = Map.merge(wires, gates)
+zs |> Enum.map(&Day24.evaluate(lookup, &1)) |> Day24.bits2dec()
+```
+
+```elixir
+defmodule Part2 do
+  defp is_xy(wire), do: String.starts_with?(wire, "x") or String.starts_with?(wire, "y")
+
+  defp key(prefix, n), do: if(n > 10, do: prefix <> "#{n}", else: prefix <> "0#{n}")
+
+  defp intermediates(lookup, wire) do
+    if is_xy(wire) do
+      MapSet.new()
+    else
+      [a, _, b] = lookup[wire]
+      i1 = intermediates(lookup, a)
+      i2 = intermediates(lookup, b)
+      MapSet.union(i1, i2) |> MapSet.put(wire)
+    end
+  end
+
+  defp sample_error(gates, xs, ys, zs) do
+    input = (xs ++ ys) |> Enum.into(%{}, &{&1, Enum.random([true, false])})
+    lookup = Map.merge(input, gates)
+    x = xs |> Enum.map(&input[&1]) |> Day24.bits2dec()
+    y = ys |> Enum.map(&input[&1]) |> Day24.bits2dec()
+    expected_z = Day24.dec2bits(x + y)
+
+    zs
+    |> Enum.map(&Day24.evaluate(lookup, &1))
+    |> Enum.zip(expected_z)
+    |> Enum.find_index(fn {a, b} -> a != b end)
+  end
+
+  defp first_error(gates, xs, ys, zs) do
+    for(_ <- 1..100, do: sample_error(gates, xs, ys, zs))
+    |> Enum.min()
+  end
+
+  defp in_cycle(lookup, wire, seen) do
+    cond do
+      is_xy(wire) ->
+        false
+
+      wire in seen ->
+        true
+
+      true ->
+        [a, _, b] = lookup[wire]
+        seen = MapSet.put(seen, wire)
+        in_cycle(lookup, a, seen) or in_cycle(lookup, b, seen)
+    end
+  end
+
+  defp contains_cycle(lookup) do
+    lookup |> Map.keys() |> Enum.any?(&in_cycle(lookup, &1, MapSet.new()))
+  end
+
+  def swap(gates, g1, g2) do
+    gates |> Map.put(g1, gates[g2]) |> Map.put(g2, gates[g1])
+  end
+
+  def next_swap(gates, xs, ys, zs) do
+    first_error = first_error(gates, xs, ys, zs)
+
+    eliminated =
+      zs
+      |> Enum.take(first_error)
+      |> Enum.map(&intermediates(gates, &1))
+      |> Enum.reduce(&MapSet.union/2)
+
+    candidates = gates |> intermediates(key("z", first_error)) |> MapSet.difference(eliminated)
+    remainder = gates |> Map.keys() |> MapSet.new() |> MapSet.difference(eliminated)
+
+    for g1 <- candidates, g2 <- remainder do
+      swapped = swap(gates, g1, g2)
+
+      if not contains_cycle(swapped) do
+        error = first_error(swapped, xs, ys, zs)
+        if error > first_error, do: {g1, g2}
+      end
+    end
+    |> Enum.reject(&is_nil/1)
+  end
+end
+
+Enum.reduce(1..4, {[], gates}, fn _, {swaps, acc} ->
+  [{a, b}] = Part2.next_swap(acc, xs, ys, zs) |> IO.inspect()
+  {[a, b | swaps], Part2.swap(acc, a, b)}
+end)
+|> then(&elem(&1, 0))
+|> Enum.sort()
+|> Enum.join(",")
+```

@@ -1,0 +1,29 @@
+# Day 25
+
+## Solution
+
+```elixir
+{:ok, contents} = File.read("#{__DIR__}/inputs/day25.txt")
+
+parse = fn schema ->
+  cols =
+    schema
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.to_charlist/1)
+    |> Enum.zip_with(& &1)
+
+  heights = Enum.map(cols, fn col -> Enum.count(col, &(&1 == ?#)) - 1 end)
+  type = if Enum.all?(cols, &(hd(&1) == ?#)), do: :lock, else: :key
+  {type, heights}
+end
+
+input = contents |> String.split("\n\n") |> Enum.map(parse)
+[keys, locks] = [:key, :lock] |> Enum.map(&Keyword.get_values(input, &1))
+
+for key <- keys, lock <- locks do
+  [key, lock]
+  |> Enum.zip_with(fn [k, l] -> k + l <= 5 end)
+  |> Enum.all?()
+end
+|> Enum.count(& &1)
+```

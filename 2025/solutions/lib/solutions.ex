@@ -1,18 +1,19 @@
 defmodule Solutions do
-  @moduledoc """
-  Documentation for `Solutions`.
-  """
+  defp _run(day, prefix) do
+    suffix = day |> Integer.to_string() |> String.pad_leading(2, "0")
 
-  @doc """
-  Hello world.
+    {:ok, contents} =
+      __DIR__ |> Path.dirname() |> Path.join("input/#{prefix}#{suffix}.txt") |> File.read()
 
-  ## Examples
+    module = Module.concat(["Day#{suffix}" |> String.to_atom()])
+    apply(module, :run, [contents])
+  end
 
-      iex> Solutions.hello()
-      :world
+  def test(day) do
+    _run(day, "test")
+  end
 
-  """
-  def hello do
-    :world
+  def run(day) do
+    _run(day, "day")
   end
 end

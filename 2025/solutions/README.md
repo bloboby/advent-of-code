@@ -1,21 +1,6 @@
-# Solutions
+Put inputs in `input/testXX.txt` or `input/dayXX.txt`, then run using
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `solutions` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:solutions, "~> 0.1.0"}
-  ]
-end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/solutions>.
-
+mix run -e "Solutions.test(day, part)"
+mix run -e "Solutions.run(day, part)"
+```

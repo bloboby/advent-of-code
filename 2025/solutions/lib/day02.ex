@@ -36,16 +36,10 @@ defmodule Day02 do
   end
 
   def part1(contents) do
-    contents
-    |> parse()
-    |> Enum.map(&sum_doubles/1)
-    |> Enum.sum()
+    contents |> parse() |> Enum.map(&sum_doubles/1) |> Enum.sum()
   end
 
   def part2(contents) do
-    contents
-    |> parse()
-    |> Enum.map(&sum_invalid/1)
-    |> Enum.sum()
+    contents |> parse() |> Enum.map(&sum_invalid/1) |> Enum.sum()
   end
 end

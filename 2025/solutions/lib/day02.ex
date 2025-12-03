@@ -19,7 +19,7 @@ defmodule Day02 do
       false
     else
       num = Integer.to_string(n)
-      repeated = binary_part(num, 0, Integer.floor_div(len, k)) |> repeat(k)
+      repeated = binary_part(num, 0, div(len, k)) |> repeat(k)
       num == repeated
     end
   end
@@ -40,7 +40,6 @@ defmodule Day02 do
     |> parse()
     |> Enum.map(&sum_doubles/1)
     |> Enum.sum()
-    |> IO.inspect()
   end
 
   def part2(contents) do
@@ -48,6 +47,5 @@ defmodule Day02 do
     |> parse()
     |> Enum.map(&sum_invalid/1)
     |> Enum.sum()
-    |> IO.inspect()
   end
 end

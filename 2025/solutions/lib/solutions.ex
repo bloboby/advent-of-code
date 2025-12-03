@@ -11,6 +11,7 @@ defmodule Solutions do
       part == 1 -> apply(module, :part1, [contents])
       part == 2 -> apply(module, :part2, [contents])
     end
+    |> IO.inspect()
   end
 
   def test(day, part) do

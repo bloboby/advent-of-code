@@ -23,4 +23,4 @@ erl_crash.dump
 solutions-*.tar
 
 # For Advent of Code input
-input/*
+input/*.txt

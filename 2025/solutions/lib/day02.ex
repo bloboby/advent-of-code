@@ -9,9 +9,6 @@ defmodule Day02 do
     :math.log10(n + 1) |> ceil()
   end
 
-  defp repeat(x, 1), do: x
-  defp repeat(x, k), do: x <> repeat(x, k - 1)
-
   defp repeats?(n, k) do
     len = num_digits(n)
 
@@ -19,7 +16,7 @@ defmodule Day02 do
       false
     else
       num = Integer.to_string(n)
-      repeated = binary_part(num, 0, div(len, k)) |> repeat(k)
+      repeated = binary_part(num, 0, div(len, k)) |> String.duplicate(k)
       num == repeated
     end
   end
@@ -36,10 +33,10 @@ defmodule Day02 do
   end
 
   def part1(contents) do
-    contents |> parse() |> Enum.map(&sum_doubles/1) |> Enum.sum()
+    contents |> parse() |> Enum.sum_by(&sum_doubles/1)
   end
 
   def part2(contents) do
-    contents |> parse() |> Enum.map(&sum_invalid/1) |> Enum.sum()
+    contents |> parse() |> Enum.sum_by(&sum_invalid/1)
   end
 end

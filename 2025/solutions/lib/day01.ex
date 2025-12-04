@@ -1,49 +1,44 @@
 defmodule Day01 do
-  defp rotate(location, direction, distance) do
+  defp parse(contents) do
+    contents
+    |> String.split("\n")
+    |> Enum.map(fn <<op, n::binary>> -> {op, String.to_integer(n)} end)
+  end
+
+  defp rotate(pos, op, n) do
     cond do
-      direction == "L" -> location - distance
-      direction == "R" -> location + distance
+      op == ?L -> pos - n
+      op == ?R -> pos + n
     end
     |> Integer.mod(100)
   end
 
-  defp final_crossing(location, direction, distance) do
-    remainder = Integer.mod(distance, 100)
-
+  defp final_crossing(pos, op, n) do
     cond do
-      location == 0 -> 0
-      direction == "L" and location <= remainder -> 1
-      direction == "R" and 100 - location <= remainder -> 1
+      pos == 0 -> 0
+      op == ?L and pos <= n -> 1
+      op == ?R and 100 - pos <= n -> 1
       true -> 0
     end
   end
 
-  defp count_final_zeroes(command, {location, count}) do
-    <<direction::binary-size(1), distance::binary>> = command
-    distance = String.to_integer(distance)
-
-    location = rotate(location, direction, distance)
-    count = if location == 0, do: count + 1, else: count
-    {location, count}
+  defp count_final_zeroes({op, n}, {pos, count}) do
+    pos = rotate(pos, op, n)
+    count = if pos == 0, do: count + 1, else: count
+    {pos, count}
   end
 
-  defp count_all_zeroes(command, {location, count}) do
-    <<direction::binary-size(1), distance::binary>> = command
-    distance = String.to_integer(distance)
-
-    count =
-      count + Integer.floor_div(distance, 100) + final_crossing(location, direction, distance)
-
-    location = rotate(location, direction, distance)
-
-    {location, count}
+  defp count_all_zeroes({op, n}, {pos, count}) do
+    count = count + div(n, 100) + final_crossing(pos, op, rem(n, 100))
+    pos = rotate(pos, op, n)
+    {pos, count}
   end
 
   def part1(contents) do
-    contents |> String.split("\n") |> Enum.reduce({50, 0}, &count_final_zeroes/2) |> elem(1)
+    contents |> parse() |> Enum.reduce({50, 0}, &count_final_zeroes/2) |> elem(1)
   end
 
   def part2(contents) do
-    contents |> String.split("\n") |> Enum.reduce({50, 0}, &count_all_zeroes/2) |> elem(1)
+    contents |> parse() |> Enum.reduce({50, 0}, &count_all_zeroes/2) |> elem(1)
   end
 end

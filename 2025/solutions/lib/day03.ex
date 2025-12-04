@@ -15,10 +15,10 @@ defmodule Day03 do
   end
 
   def part1(contents) do
-    contents |> String.split("\n") |> Enum.map(&max_joltage(&1, 2)) |> Enum.sum()
+    contents |> String.split("\n") |> Enum.sum_by(&max_joltage(&1, 2))
   end
 
   def part2(contents) do
-    contents |> String.split("\n") |> Enum.map(&max_joltage(&1, 12)) |> Enum.sum()
+    contents |> String.split("\n") |> Enum.sum_by(&max_joltage(&1, 12))
   end
 end

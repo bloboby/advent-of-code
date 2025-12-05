@@ -1,4 +1,7 @@
 defmodule Day02 do
+  # Iterate through every ID and check if it is valid.
+  # O(n*d) where n = #IDs and d = #digits.
+
   defp parse(contents) do
     contents
     |> String.split(",")

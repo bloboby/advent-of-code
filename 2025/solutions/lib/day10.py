@@ -11,7 +11,7 @@ def part2(line: str) -> int:
     joltage = parse_word(words[-1])
 
     cols = [[1 if i in button else 0 for i in range(len(joltage))] for button in buttons]
-    rows = [list(col) for col in zip(*cols)]
+    rows = [list(row) for row in zip(*cols)]
     target = [1] * len(rows[0])
     result = linprog(c=target, A_eq=rows, b_eq=joltage, integrality=1)
 
